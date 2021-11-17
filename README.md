@@ -1,4 +1,4 @@
-# A simple node for flir one camera on linux
+# A modified version of the original ROS flir_one_node package: https://github.com/aplyer/flir_one_node 
 
 install udev rules:
   >sudo cp 51-usb-flir-one.rules /etc/udev/rules.d
