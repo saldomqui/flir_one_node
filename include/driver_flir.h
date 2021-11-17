@@ -15,16 +15,17 @@
 */
 #define BUF85SIZE 1048576
 
+using namespace std;
+
 namespace driver_flir
 {
 
   class DriverFlir
   {
   public:
-
-    DriverFlir( ros::NodeHandle nh,
-                ros::NodeHandle priv_nh,
-                ros::NodeHandle camera_nh);
+    DriverFlir(ros::NodeHandle nh,
+               ros::NodeHandle priv_nh,
+               ros::NodeHandle camera_nh);
     ~DriverFlir();
     void poll(void);
     void setup(void);
@@ -34,25 +35,55 @@ namespace driver_flir
 
   private:
     void publish(const sensor_msgs::ImagePtr &image);
-    void read(char ep[],char EP_error[], int r, int actual_length, unsigned char buf[]);
+    void read(char ep[], char EP_error[], int r, int actual_length, unsigned char buf[]);
 
-    void print_bulk_result(char ep[],char EP_error[], int r, int actual_length, unsigned char buf[]);
+    void print_bulk_result(char ep[], char EP_error[], int r, int actual_length, unsigned char buf[]);
+    void getHeatMapColorFromValue(const float &value, float *red, float *green, float *blue);
+    void setColors(float color_list[][3], const int num_base_colors);
 
     libusb_context *context;
     struct libusb_device_handle *devh;
 
     unsigned char buf[1048576];
     int actual_length;
-   	char EP81_error[50];
+    char EP81_error[50];
     char EP83_error[50];
     char EP85_error[50];
     int buf85pointer = 0;
     unsigned char buf85[BUF85SIZE];
+    vector<vector<float>> color_list_;
 
-    enum states_t {INIT, INIT_1, INIT_2, ASK_ZIP, ASK_VIDEO, POOL_FRAME, ERROR};
+    float min_val;
+    float max_val;
+    float delta_val;
+
+    bool publish_ir_image;
+    bool publish_rgb_image;
+
+    enum states_t
+    {
+      INIT,
+      INIT_1,
+      INIT_2,
+      ASK_ZIP,
+      ASK_VIDEO,
+      POOL_FRAME,
+      ERROR
+    };
     states_t states;
 
-    enum setup_states_t {SETUP_INIT, SETUP_LISTING, SETUP_FIND, SETUP_SET_CONF, SETUP_CLAIM_INTERFACE_0,  SETUP_CLAIM_INTERFACE_1,  SETUP_CLAIM_INTERFACE_2, SETUP_ALL_OK, SETUP_ERROR};
+    enum setup_states_t
+    {
+      SETUP_INIT,
+      SETUP_LISTING,
+      SETUP_FIND,
+      SETUP_SET_CONF,
+      SETUP_CLAIM_INTERFACE_0,
+      SETUP_CLAIM_INTERFACE_1,
+      SETUP_CLAIM_INTERFACE_2,
+      SETUP_ALL_OK,
+      SETUP_ERROR
+    };
     setup_states_t setup_states;
 
     int error_code;
@@ -65,17 +96,16 @@ namespace driver_flir
     int vendor_id;
     int product_id;
 
-
-    ros::NodeHandle nh_;                  // node handle
-    ros::NodeHandle priv_nh_;             // private node handle
-    ros::NodeHandle camera_nh_;           // camera name space handle
-    std::string camera_name_;             // camera name
-    std::string camera_frame_;             // camera name
+    ros::NodeHandle nh_;        // node handle
+    ros::NodeHandle priv_nh_;   // private node handle
+    ros::NodeHandle camera_nh_; // camera name space handle
+    std::string camera_name_;   // camera name
+    std::string camera_frame_;  // camera name
 
     /** image transport interfaces */
     boost::shared_ptr<image_transport::ImageTransport> it_;
     ros::Publisher image_pub_;
     ros::Publisher image_rgb_pub_;
-    ros::Publisher image_8b_pub_;
+    ros::Publisher image_ir_pub_;
   };
 };

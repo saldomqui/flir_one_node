@@ -1,0 +1,16 @@
+<launch>
+  <node pkg="flir_one_node" type="flir_one_node" name="flir_one_node" output="screen" respawn="false">
+    <param name="min_temp" type="double" value="30.0" />
+    <param name="max_temp" type="double" value="40.0" />
+    <param name="publish_rgb_image" type="bool" value="true" />
+    <param name="publish_ir_image" type="bool" value="true" />
+  </node>
+
+  <!-- VISUALIZATION -->
+  <node name="rqt_image_view_rgb" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen">
+    <remap from="image" to="/flir_one_node/rgb/image_raw"/>
+  </node>
+  <node name="rqt_image_view_ir" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen">
+    <remap from="image" to="/flir_one_node/ir/image_raw"/>
+  </node>
+</launch>
