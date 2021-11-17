@@ -1,9 +1,12 @@
 <launch>
   <node pkg="flir_one_node" type="flir_one_node" name="flir_one_node" output="screen" respawn="false">
-    <param name="min_temp" type="double" value="30.0" />
-    <param name="max_temp" type="double" value="40.0" />
+    <param name="min_temp" type="double" value="30.0" /><!-- any pixel below this temperature will be represented in blue in the temp-coded ir colour image-->
+    <param name="max_temp" type="double" value="40.0" /><!-- any pixel above this temperature will be represented in red in the temp-coded ir colour image-->
     <param name="publish_rgb_image" type="bool" value="true" />
     <param name="publish_ir_image" type="bool" value="true" />
+    <param name="ir_img_color" type="bool" value="false" /><!-- set to true to publish ir temp-coded color image, false for grayscale -->
+    <param name="ir_img_width" type="int" value="80" /><!-- 80 or 160 -->
+    <param name="ir_img_height" type="int" value="60" /><!-- 60 or 120 -->
   </node>
 
   <!-- VISUALIZATION -->

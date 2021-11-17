@@ -32,6 +32,11 @@ namespace driver_flir
                                                       context(NULL),
                                                       vendor_id(0x09cb),
                                                       product_id(0x1996),
+                                                      ir_img_color(true),
+                                                      publish_ir_image(true),
+                                                      publish_rgb_image(true),
+                                                      ir_img_width(80),
+                                                      ir_img_height(60),
                                                       it_(new image_transport::ImageTransport(camera_nh_))
   {
     //Heatbar properties
@@ -51,6 +56,8 @@ namespace driver_flir
     cout << "publish_rgb_image:" << publish_rgb_image << endl;
     priv_nh_.getParam("publish_ir_image", publish_ir_image);
     cout << "publish_ir_image:" << publish_ir_image << endl;
+    priv_nh_.getParam("ir_img_color", ir_img_color);
+    cout << "ir_img_color:" << ir_img_color << endl;
 
     // Max & Min value used for scaling
     // (limits: -20° - +75° | 1600 - 5852)
@@ -200,7 +207,6 @@ namespace driver_flir
           pix[y * 160 + x] = v; // unsigned char!!
         }
       }
-
       cv::Mat im16 = cv::Mat(120, 160, CV_16UC1, pix);
       /*
     cv_bridge::CvImage out_msg;
@@ -212,35 +218,77 @@ namespace driver_flir
     image_pub_.publish(out_msg.toImageMsg());
 */
 
-      cv::Mat thermal_data = cv::Mat(60, 80, CV_8UC3, cv::Scalar(0, 0, 0));
-      for (int y = 0; y < 60; y++)
-      {
-        for (int x = 0; x < 80; x++)
-        {
-          uint8_t px_val;
-          float px_coef;
-          float red, green, blue;
+      cv::Mat thermal_data;
 
-          if (y % 2)
-          { //odd
-            px_coef = (static_cast<float>(im16.at<uint16_t>(floor(y / 2), x + 80)) - min_val) / delta_val;
+      if (ir_img_color)
+      {
+        thermal_data = cv::Mat(ir_img_height, ir_img_width, CV_8UC3, cv::Scalar(0, 0, 0));
+      }
+      else
+      {
+        thermal_data = cv::Mat(ir_img_height, ir_img_width, CV_8UC1);
+      }
+
+      for (int y = 0; y < ir_img_height; y++)
+      {
+        for (int x = 0; x < ir_img_width; x++)
+        {
+          if (ir_img_color)
+          {
+            float px_coef;
+            float red, green, blue;
+
+            if (ir_img_width == 80) //80x60
+            {
+              if (y % 2)
+              { //odd
+                px_coef = (static_cast<float>(im16.at<uint16_t>(floor(y / 2), x + 80)) - min_val) / delta_val;
+              }
+              else
+              { //even
+                px_coef = (static_cast<float>(im16.at<uint16_t>(y / 2, x)) - min_val) / delta_val;
+              }
+            }
+            else
+            { //160x120
+                px_coef = (static_cast<float>(im16.at<uint16_t>(y, x)) - min_val) / delta_val;
+            }
+
+            getHeatMapColorFromValue(px_coef, &red, &green, &blue);
+            thermal_data.at<cv::Vec3b>(y, x)[0] = static_cast<uint8_t>(blue * 255.0);
+            thermal_data.at<cv::Vec3b>(y, x)[1] = static_cast<uint8_t>(green * 255.0);
+            thermal_data.at<cv::Vec3b>(y, x)[2] = static_cast<uint8_t>(red * 255.0);
           }
           else
-          { //even
-            px_coef = (static_cast<float>(im16.at<uint16_t>(y / 2, x)) - min_val) / delta_val;
+          {
+            if (ir_img_width == 80) //80x60
+            {
+              if (y % 2)
+              { //odd
+                thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(255.0 * (static_cast<float>(im16.at<uint16_t>(floor(y / 2), x + 80)) - min_val) / delta_val);
+              }
+              else
+              { //even
+                thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(255.0 * (static_cast<float>(im16.at<uint16_t>(y / 2, x)) - min_val) / delta_val);
+              }
+            }else{//160x120
+                thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(255.0 * (static_cast<float>(im16.at<uint16_t>(y, x)) - min_val) / delta_val);
+            }
           }
-
-          getHeatMapColorFromValue(px_coef, &red, &green, &blue);
-          thermal_data.at<cv::Vec3b>(y, x)[0] = static_cast<uint8_t>(blue * 255.0);
-          thermal_data.at<cv::Vec3b>(y, x)[1] = static_cast<uint8_t>(green * 255.0);
-          thermal_data.at<cv::Vec3b>(y, x)[2] = static_cast<uint8_t>(red * 255.0);
         }
       }
 
       cv_bridge::CvImage out_8b;
       out_8b.header.frame_id = camera_frame_;
       out_8b.header.stamp = stamp;
-      out_8b.encoding = "rgb8"; // Or whatever
+      if (ir_img_color)
+      {
+        out_8b.encoding = "rgb8";
+      }
+      else
+      {
+        out_8b.encoding = "mono8";
+      }
       out_8b.image = thermal_data;
       image_ir_pub_.publish(out_8b.toImageMsg());
     }
@@ -628,5 +676,4 @@ namespace driver_flir
       shutdown();
     }
   }
-
 };

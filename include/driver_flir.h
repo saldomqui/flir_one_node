@@ -59,6 +59,8 @@ namespace driver_flir
 
     bool publish_ir_image;
     bool publish_rgb_image;
+    bool ir_img_color;
+    int ir_img_width, ir_img_height;
 
     enum states_t
     {
