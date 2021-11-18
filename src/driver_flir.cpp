@@ -251,8 +251,13 @@ namespace driver_flir
             }
             else
             { //160x120
-                px_coef = (static_cast<float>(im16.at<uint16_t>(y, x)) - min_val) / delta_val;
+              px_coef = (static_cast<float>(im16.at<uint16_t>(y, x)) - min_val) / delta_val;
             }
+
+            if (px_coef < 0.0)
+              px_coef = 0.0;
+            else if (px_coef > 1.0)
+              px_coef = 1.0;
 
             getHeatMapColorFromValue(px_coef, &red, &green, &blue);
             thermal_data.at<cv::Vec3b>(y, x)[0] = static_cast<uint8_t>(blue * 255.0);
@@ -261,19 +266,28 @@ namespace driver_flir
           }
           else
           {
+            float pix_val;
+
             if (ir_img_width == 80) //80x60
             {
               if (y % 2)
               { //odd
-                thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(255.0 * (static_cast<float>(im16.at<uint16_t>(floor(y / 2), x + 80)) - min_val) / delta_val);
+                pix_val = 255.0 * (static_cast<float>(im16.at<uint16_t>(floor(y / 2), x + 80)) - min_val) / delta_val;
               }
               else
               { //even
-                thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(255.0 * (static_cast<float>(im16.at<uint16_t>(y / 2, x)) - min_val) / delta_val);
+                pix_val = 255.0 * (static_cast<float>(im16.at<uint16_t>(y / 2, x)) - min_val) / delta_val;
               }
-            }else{//160x120
-                thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(255.0 * (static_cast<float>(im16.at<uint16_t>(y, x)) - min_val) / delta_val);
             }
+            else
+            { //160x120
+              pix_val = 255.0 * (static_cast<float>(im16.at<uint16_t>(y, x)) - min_val) / delta_val;
+            }
+            if (pix_val < 0.0)
+              pix_val = 0.0;
+            else if (pix_val > 255.0)
+              pix_val = 255.0;
+            thermal_data.at<uint8_t>(y, x) = static_cast<uint8_t>(pix_val);
           }
         }
       }
