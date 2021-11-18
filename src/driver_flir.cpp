@@ -4,17 +4,15 @@
 
 //#define DEBUG_
 
-/* with these values doesn't work
+// Max & Min value used for scaling
+// (limits: -20° - +75° | 1600 - 5852)
+//
+// Theorical IR Sensor sensitivity : 0.1°C
+
 #define TEMP1 (-20.0)
 #define TEMP2 75.0
 #define VAL_TEMP1 1600.0
 #define VAL_TEMP2 5852.0
-*/
-
-#define TEMP1 20.0
-#define TEMP2 40.0
-#define VAL_TEMP1 2934.0
-#define VAL_TEMP2 3847.0
 
 namespace driver_flir
 {
@@ -58,11 +56,6 @@ namespace driver_flir
     cout << "publish_ir_image:" << publish_ir_image << endl;
     priv_nh_.getParam("ir_img_color", ir_img_color);
     cout << "ir_img_color:" << ir_img_color << endl;
-
-    // Max & Min value used for scaling
-    // (limits: -20° - +75° | 1600 - 5852)
-    //
-    // Theorical IR Sensor sensitivity : 0.1°C
 
     min_val = static_cast<float>(VAL_TEMP1 + (VAL_TEMP2 - VAL_TEMP1) * (min_temp - TEMP1) / (TEMP2 - TEMP1));
     max_val = static_cast<float>(VAL_TEMP1 + (VAL_TEMP2 - VAL_TEMP1) * (max_temp - TEMP1) / (TEMP2 - TEMP1));
